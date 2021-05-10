@@ -1,0 +1,1055 @@
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001         PROCESSOR       16F877A
+                      00002         RADIX           DEC
+                      00003 
+                      00004 #INCLUDE <P16F877A.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC16F877A processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2011 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00555         LIST
+2007   3F32           00005         __CONFIG        0X3F32
+                      00006 
+0000                  00007         ORG     0X00
+0000   2830           00008         GOTO INICIO
+                      00009 
+0004                  00010         ORG 0X04
+0004   2B00           00011         GOTO INTER
+                      00012 
+0020                  00013         ORG     0X20
+0020   3FFF 3FFF      00014 TEMP    RES     2 ;REGISTRADOR TEMPORARIO
+0022   3FFF           00015 SEGU    RES 1 ;UNIDADE DE SEG
+0023   3FFF           00016 SEGD    RES 1 ;DEZENA DE SEG
+0024   3FFF           00017 MINU    RES     1 ;UNIDADE DE MIN
+0025   3FFF           00018 MIND    RES 1 ;DEZENA DE MIN
+0026   3FFF           00019 HORAU   RES     1 ;UNIDADE DE HORA
+0027   3FFF           00020 HORAD   RES     1 ;DEZENA DE HORA
+0028   3FFF           00021 W_TEMP  RES 1 ;SALVA W
+0029   3FFF           00022 S_TEMP  RES 1 ;SALVA STATUS
+002A   3FFF           00023 FLAGS   RES 1 ;0-PONTO,1-HORAMIN E MINSEG,2-MOSTRA CRONOMETRO
+                      00024                           ;3-CRONOMETRO PARA/CONT
+002B   3FFF           00025 DEZSEG  RES     1 ;DEZENAS DE SEG PARA O RELOGIO
+002C   3FFF           00026 CRODEZ  RES     1 ;CRONOMETRO DEZENAS DE SEGUNDOS
+002D   3FFF           00027 CROU    RES     1 ;CRONOMETRO UNIDADE DE SEGUNDOS
+002E   3FFF           00028 CROD    RES 1 ;CRONOMETRO DEZENAS DE SEGUNDOS
+002F   3FFF           00029 CROC    RES 1 ;CRONOMETRO CENTENAS DE SEGUNDOS
+                      00030 
+0030                  00031 INICIO
+0030   1683 1303      00032         BANKSEL TRISD
+0032   3000           00033         MOVLW   00000000B
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0033   0088           00034         MOVWF   TRISD
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0034   0085           00035         MOVWF   TRISA
+0035   30FF           00036         MOVLW   11111111B
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0036   0086           00037         MOVWF   TRISB
+0037   3006           00038         MOVLW   0X06
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0038   009F           00039         MOVWF   ADCON1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0039   140C           00040         BSF             PIE1, TMR1IE ;LIGA INT. TIMER
+003A   170B           00041         BSF             INTCON, PEIE ;LIGA INT. PERIFERICOS
+003B   178B           00042         BSF             INTCON, GIE ;LIGA INT. GERAL
+                      00043 
+003C   1283 1303      00044         BANKSEL PORTD
+003E   3000           00045         MOVLW   00000000B
+003F   0088           00046         MOVWF   PORTD
+0040   0085           00047         MOVWF   PORTA
+0041   0190           00048         CLRF    T1CON
+                      00049 
+0042   1410           00050         BSF             T1CON,TMR1ON ;LIGA TMR1
+0043   1690           00051         BSF             T1CON,T1CKPS1
+0044   1610           00052         BSF             T1CON,T1CKPS0
+                      00053 
+0045   01A2           00054         CLRF    SEGU
+0046   01A3           00055         CLRF    SEGD
+0047   01A4           00056         CLRF    MINU
+0048   01A5           00057         CLRF    MIND
+0049   01A6           00058         CLRF    HORAU
+004A   01A7           00059         CLRF    HORAD
+004B   018E           00060         CLRF    TMR1L
+004C   018F           00061         CLRF    TMR1H
+004D   01AA           00062         CLRF    FLAGS
+004E   01AC           00063         CLRF    CRODEZ
+004F   01AD           00064         CLRF    CROU
+0050   01AE           00065         CLRF    CROD
+0051   01AF           00066         CLRF    CROC
+0052   01AB           00067         CLRF    DEZSEG
+0053   14AA           00068         BSF             FLAGS,1
+                      00069 
+0054                  00070 LOOP
+                      00071 
+                      00072 ;***************BOTAO0********************
+0054   1806           00073         BTFSC   PORTB,0
+0055   2863           00074         GOTO    $+14
+0056   1C06           00075         BTFSS   PORTB,0
+0057   2856           00076         GOTO    $-1
+0058   1D2A           00077         BTFSS   FLAGS,2
+0059   285F           00078         GOTO    $+6
+005A   01AC           00079         CLRF    CRODEZ
+005B   01AD           00080         CLRF    CROU
+005C   01AE           00081         CLRF    CROD
+005D   01AF           00082         CLRF    CROC
+005E   2863           00083         GOTO    $+5
+                      00084 
+                      00085 ;************AJUSTA O TEMPO****************
+005F   3006           00086     MOVLW       00000110B;0x600
+0060   008A           00087     MOVWF       PCLATH
+0061   2600           00088     CALL        AJUSTE
+0062   018A           00089     CLRF        PCLATH
+                      00090 ;******************************************
+                      00091 ;******************************************
+                      00092 
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00093 ;***************BOTAO3*********************
+0063   3002           00094         MOVLW   00000010B
+0064   1986           00095         BTFSC   PORTB,3
+0065   2869           00096         GOTO    $+4
+0066   1D86           00097         BTFSS   PORTB,3
+0067   2866           00098         GOTO    $-1
+0068   06AA           00099         XORWF   FLAGS,F
+                      00100 ;*****************************************
+                      00101 
+                      00102 ;******************BOTAO4*****************
+0069   3004           00103     MOVLW       00000100B
+006A   1A06           00104     BTFSC       PORTB,4
+006B   286F           00105     GOTO        $+4
+006C   1E06           00106     BTFSS       PORTB,4
+006D   286C           00107     GOTO        $-1
+006E   06AA           00108     XORWF       FLAGS,F
+                      00109 ;*****************************************
+                      00110 
+                      00111 ;******************BOTAO5*****************
+006F   3008           00112     MOVLW       00001000B
+0070   1A86           00113     BTFSC       PORTB,5
+0071   2875           00114     GOTO        $+4
+0072   1E86           00115     BTFSS       PORTB,5
+0073   2872           00116     GOTO        $-1
+0074   06AA           00117     XORWF       FLAGS,F
+                      00118 ;******************************************
+                      00119 
+                      00120 ;*CHAMA A FUNÇAO PARA INCREMENTAR O TEMPO**
+0075   3004           00121         MOVLW   00000100B
+0076   008A           00122         MOVWF   PCLATH
+0077   2400           00123         CALL    TIMER
+0078   018A           00124         CLRF    PCLATH
+                      00125 ;******************************************
+                      00126 
+                      00127 ;*******CHAMA O LIGA DISPLAY***************
+0079   3002           00128         MOVLW   00000010B
+007A   008A           00129         MOVWF   PCLATH
+007B   2200           00130         CALL    DISPLAY
+007C   018A           00131         CLRF    PCLATH
+                      00132 ;******************************************
+                      00133 
+007D   2854           00134         GOTO    LOOP
+                      00135 
+                      00136 ;*TEMPO QUE OS DISPLAYS PERMANECEM ACESSOS*
+007E                  00137 ATRASO2 ;X*10+7
+007E   3001           00138         MOVLW   100/256+1
+007F   00A0           00139         MOVWF   TEMP
+0080   3064           00140         MOVLW   100%256
+0081   00A1           00141         MOVWF   TEMP+1
+                      00142 
+0082   0000           00143         NOP
+0083   0000           00144         NOP
+0084   0000           00145         NOP
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0085   0000           00146         NOP
+0086   0000           00147         NOP
+                      00148 
+0087   03A1           00149         DECF    TEMP+1,F
+0088   1903           00150         BTFSC   STATUS,Z
+                      00151 
+0089   0BA0           00152         DECFSZ  TEMP,F
+008A   2882           00153         GOTO    $-8
+                      00154 
+008B   0008           00155         RETURN
+                      00156 ;******************************************
+                      00157 
+                      00158 ;**************LIGA O DISPLAY**************
+0200                  00159         ORG     0X200
+0200                  00160 DISPLAY
+0200   1105           00161         BCF             PORTA,2; DESLIGA DISPLAY 4
+0201   1685           00162         BSF             PORTA,5; LIGA DISPLAY 1
+0202   3005           00163         MOVLW   00000101B; 0x500
+0203   008A           00164         MOVWF   PCLATH
+0204   0824           00165         MOVF    MINU,W
+0205   1CAA           00166         BTFSS   FLAGS,1
+0206   0822           00167         MOVF    SEGU,W
+0207   192A           00168         BTFSC   FLAGS,2
+0208   0C2C           00169         RRF             CRODEZ,W
+0209   2500           00170         CALL    HEX7SEG
+020A   0088           00171         MOVWF   PORTD
+020B   018A           00172         CLRF    PCLATH
+020C   207E           00173     CALL        ATRASO2
+                      00174 
+020D   3005           00175     MOVLW       00000101B
+020E   008A           00176     MOVWF       PCLATH
+020F   1285           00177         BCF             PORTA,5; DESLIGA DISPLAY 1
+0210   1605           00178         BSF             PORTA,4; LIGA DISPLAY 2
+0211   0825           00179     MOVF        MIND,W
+0212   1CAA           00180     BTFSS       FLAGS,1
+0213   0823           00181     MOVF        SEGD,W
+0214   192A           00182     BTFSC       FLAGS,2
+0215   082D           00183     MOVF        CROU,W;
+0216   2500           00184     CALL        HEX7SEG
+0217   0088           00185     MOVWF       PORTD
+0218   192A           00186     BTFSC       FLAGS,2
+0219   1788           00187     BSF         PORTD,7
+021A   018A           00188     CLRF        PCLATH
+021B   207E           00189     CALL        ATRASO2
+                      00190 
+021C   3005           00191     MOVLW       00000101B
+021D   008A           00192     MOVWF       PCLATH
+021E   1205           00193         BCF             PORTA,4; DESLIGA DISPLAY 2
+021F   1585           00194         BSF             PORTA,3; LIGA DISPLAY 3
+0220   0826           00195     MOVF        HORAU,W
+0221   1CAA           00196     BTFSS       FLAGS,1
+0222   0824           00197     MOVF        MINU,W
+0223   192A           00198     BTFSC       FLAGS,2
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0224   082E           00199     MOVF        CROD,W
+0225   2500           00200     CALL        HEX7SEG
+0226   0088           00201     MOVWF       PORTD
+0227   192A           00202     BTFSC       FLAGS,2
+0228   2A2F           00203     GOTO        $+7
+0229   1CAA           00204         BTFSS   FLAGS,1
+022A   2A2F           00205         GOTO    $+5
+022B   182A           00206     BTFSC       FLAGS,0
+022C   1788           00207     BSF         PORTD,7
+022D   1C2A           00208     BTFSS       FLAGS,0
+022E   1388           00209     BCF         PORTD,7
+022F   018A           00210     CLRF        PCLATH
+0230   207E           00211     CALL        ATRASO2
+                      00212 
+0231   3005           00213     MOVLW       00000101B
+0232   008A           00214     MOVWF       PCLATH
+0233   1185           00215         BCF             PORTA,3; DESLIGA DISPLAY 3
+0234   1505           00216         BSF             PORTA,2; LIGA DISPLAY 4
+0235   0827           00217     MOVF        HORAD,W
+0236   1CAA           00218     BTFSS       FLAGS,1
+0237   0825           00219     MOVF        MIND,W
+0238   192A           00220     BTFSC       FLAGS,2
+0239   082F           00221     MOVF        CROC,W
+023A   2500           00222     CALL        HEX7SEG
+023B   0088           00223     MOVWF       PORTD
+023C   018A           00224     CLRF        PCLATH
+023D   207E           00225     CALL        ATRASO2
+                      00226 
+023E   0008           00227         RETURN
+                      00228 ;****************************************
+                      00229 
+                      00230 ;********INTERRUPÇAO DO TIMER************
+0300                  00231         ORG     0X300
+0300                  00232 INTER
+0300   00A8           00233         MOVWF   W_TEMP; SALVA CONTEXTO
+0301   0E03           00234         SWAPF   STATUS,W
+0302   00A9           00235         MOVWF   S_TEMP
+                      00236 
+0303   100C           00237         BCF             PIR1,TMR1IF
+0304   0AAB           00238         INCF    DEZSEG,F
+0305   0000           00239         NOP
+0306   0000           00240         NOP
+0307   0000           00241         NOP
+                      00242         
+0308   30E7           00243         MOVLW   59288/256; 
+0309   008F           00244         MOVWF   TMR1H
+030A   3098           00245         MOVLW   59288%256; 
+030B   008E           00246         MOVWF   TMR1L
+                      00247 
+                      00248 ;****************************************
+030C   19AA           00249     BTFSC       FLAGS,3; CRONOMETRO SE FLAGS 3 FOR 1 N INC
+030D   0AAC           00250     INCF        CRODEZ,F; SE FLAGS 3 FOR 0 INCREMENTANDO
+                      00251 ;****************************************
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00252 
+030E   0E29           00253         SWAPF   S_TEMP,W
+030F   0083           00254         MOVWF   STATUS
+0310   0EA8           00255         SWAPF   W_TEMP,F
+0311   0E28           00256         SWAPF   W_TEMP,W
+                      00257 
+0312   0009           00258         RETFIE; RETORNO PARA INTERRUPÇOES
+                      00259 ;****************************************
+                      00260 
+                      00261 ;***********CONTAGEM DO TIMER************
+0400                  00262     Org 0x0400
+                      00263 
+0400                  00264 TIMER
+                      00265 
+0400   1003           00266     BCF         STATUS,C
+0401   0C2B           00267     RRF         DEZSEG,W
+0402   3A0A           00268     XORLW       10
+0403   1D03           00269     BTFSS       STATUS,Z
+0404   2C09           00270     GOTO        $+5
+0405   01AB           00271     CLRF        DEZSEG
+0406   0AA2           00272     INCF        SEGU,F
+0407   3001           00273         MOVLW   00000001B
+0408   06AA           00274         XORWF   FLAGS,F; FAZ O PONTO PISCAR
+                      00275 
+0409   0822           00276     MOVF        SEGU,W
+040A   3A0A           00277     XORLW       10
+040B   1D03           00278     BTFSS       STATUS,Z
+040C   2C0F           00279     GOTO        $+3
+040D   01A2           00280     CLRF        SEGU
+040E   0AA3           00281     INCF        SEGD,F
+                      00282 
+040F   0823           00283     MOVF        SEGD,W
+0410   3A06           00284     XORLW       6
+0411   1D03           00285     BTFSS       STATUS,Z
+0412   2C15           00286     GOTO        $+3
+0413   01A3           00287     CLRF        SEGD
+0414   0AA4           00288     INCF        MINU,F
+                      00289 
+0415   0824           00290     MOVF        MINU,W
+0416   3A0A           00291     XORLW       10
+0417   1D03           00292     BTFSS       STATUS,Z
+0418   2C1B           00293     GOTO        $+3
+0419   01A4           00294     CLRF        MINU
+041A   0AA5           00295     INCF        MIND,F
+                      00296 
+041B   0825           00297     MOVF        MIND,W
+041C   3A06           00298     XORLW       6
+041D   1D03           00299     BTFSS       STATUS,Z
+041E   2C21           00300     GOTO        $+3
+041F   01A5           00301     CLRF        MIND
+0420   0AA6           00302     INCF        HORAU,F
+                      00303 
+0421   0826           00304     MOVF        HORAU,W
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0422   3A0A           00305     XORLW       10
+0423   1D03           00306     BTFSS       STATUS,Z
+0424   2C27           00307     GOTO        $+3
+0425   01A6           00308     CLRF        HORAU
+0426   0AA7           00309     INCF        HORAD,F
+                      00310 
+0427   0827           00311     MOVF        HORAD,W
+0428   3A02           00312     XORLW       2
+0429   1D03           00313     BTFSS       STATUS,Z
+042A   2C31           00314     GOTO        $+7
+042B   0826           00315     MOVF        HORAU,W
+042C   3A04           00316     XORLW       4
+042D   1D03           00317     BTFSS       STATUS,Z
+042E   2C31           00318     GOTO        $+3
+042F   01A7           00319     CLRF        HORAD
+0430   01A6           00320     CLRF        HORAU
+                      00321 
+                      00322 ;**************CRONOMETRO****************
+0431   1003           00323     BCF         STATUS,C
+0432   0C2C           00324     RRF         CRODEZ,W
+0433   3A0A           00325     XORLW       10
+0434   1D03           00326     BTFSS       STATUS,Z
+0435   2C38           00327     GOTO        $+3
+0436   01AC           00328     CLRF        CRODEZ
+0437   0AAD           00329     INCF        CROU,F
+                      00330 
+0438   082D           00331     MOVF        CROU,W
+0439   3A0A           00332     XORLW       10
+043A   1D03           00333     BTFSS       STATUS,Z
+043B   2C3E           00334     GOTO        $+3
+043C   01AD           00335     CLRF        CROU
+043D   0AAE           00336     INCF        CROD,F
+                      00337 
+043E   082E           00338     MOVF        CROD,W
+043F   3A0A           00339     XORLW       10
+0440   1D03           00340     BTFSS       STATUS,Z
+0441   2C44           00341     GOTO        $+3
+0442   01AE           00342     CLRF        CROD
+0443   0AAF           00343     INCF        CROC,F
+                      00344 
+0444   082F           00345     MOVF        CROC,W
+0445   3A0A           00346     XORLW       10
+0446   1903           00347     BTFSC       STATUS,Z
+0447   01AF           00348     CLRF        CROC
+                      00349 
+0448   0008           00350     RETURN
+                      00351 ;****************************************
+                      00352 
+                      00353 ;****************HEX7SEG*****************
+0500                  00354         ORG     0X500
+0500                  00355 HEX7SEG
+0500   390F           00356         ANDLW   00001111B
+0501   0782           00357         ADDWF   PCL,F
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00358                    ;PGFEDCBA
+0502   343F           00359         RETLW   00111111B ;0
+0503   3406           00360         RETLW   00000110B ;1
+0504   345B           00361         RETLW   01011011B ;2
+0505   344F           00362         RETLW   01001111B ;3
+0506   3466           00363         RETLW   01100110B ;4
+0507   346D           00364         RETLW   01101101B ;5
+0508   347D           00365         RETLW   01111101B ;6
+0509   3407           00366         RETLW   00000111B ;7
+050A   347F           00367         RETLW   01111111B ;8
+050B   346F           00368         RETLW   01101111B ;9
+050C   3477           00369         RETLW   01110111B ;A
+050D   347C           00370         RETLW   01111100B ;B
+050E   3439           00371         RETLW   00111001B ;C
+050F   345E           00372         RETLW   01011110B ;D
+0510   3479           00373         RETLW   01111001B ;E
+0511   3471           00374         RETLW   01110001B ;F
+                      00375 ;****************************************
+                      00376 
+                      00377 ;****************AJUSTE******************
+0600                  00378         ORG     0X600
+                      00379         
+0600                  00380 AJUSTE
+0600   1010           00381         BCF             T1CON,0
+0601   1505           00382         BSF             PORTA,2
+                      00383         
+0602   3065           00384 @1      MOVLW   00000101
+0603   008A           00385         MOVWF   PCLATH
+0604   1905           00386         BTFSC   PORTA,2
+0605   0827           00387         MOVF    HORAD,W
+0606   1985           00388         BTFSC   PORTA,3
+0607   0826           00389         MOVF    HORAU,W
+0608   1A05           00390         BTFSC   PORTA,4
+0609   0825           00391         MOVF    MIND,W
+060A   1A85           00392         BTFSC   PORTA,5
+060B   0824           00393         MOVF    MINU,W
+060C   2500           00394         CALL    HEX7SEG
+060D   0088           00395         MOVWF   PORTD
+060E   0820           00396         MOVF    TEMP,W
+060F   008A           00397         MOVWF   PCLATH
+                      00398 
+                      00399 ;****************BOTAO1******************
+                      00400 ;**************INCREMENTA****************
+0610   1886           00401         BTFSC   PORTB,1
+0611   2E1C           00402         GOTO    $+11
+                      00403 
+0612   1C86           00404         BTFSS   PORTB,1
+0613   2E12           00405         GOTO    $-1
+0614   1905           00406         BTFSC   PORTA,2
+0615   0AA7           00407         INCF    HORAD,F
+0616   1985           00408         BTFSC   PORTA,3
+0617   0AA6           00409         INCF    HORAU,F
+0618   1A05           00410         BTFSC   PORTA,4
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0619   0AA5           00411         INCF    MIND,F
+061A   1A85           00412         BTFSC   PORTA,5
+061B   0AA4           00413         INCF    MINU,F
+                      00414 ;****************************************
+                      00415 
+                      00416 ;****************BOTAO2******************
+                      00417 ;**************DECREMENTA****************
+061C   1906           00418         BTFSC   PORTB,2
+061D   2E28           00419         GOTO    $+11
+                      00420 
+061E   1D06           00421         BTFSS   PORTB,2
+061F   2E1E           00422         GOTO    $-1
+0620   1905           00423         BTFSC   PORTA,2
+0621   03A7           00424         DECF    HORAD,F
+0622   1985           00425         BTFSC   PORTA,3
+0623   03A6           00426         DECF    HORAU,F
+0624   1A05           00427         BTFSC   PORTA,4
+0625   03A5           00428         DECF    MIND,F
+0626   1A85           00429         BTFSC   PORTA,5
+0627   03A4           00430         DECF    MINU,F
+                      00431 ;****************************************
+                      00432 
+                      00433 ;*******CONFERE O VALOR DO TIMER*********
+                      00434 ;*************DE INC E DEC***************
+0628   0824           00435         MOVF    MINU,W
+0629   3A0A           00436         XORLW   10
+062A   1903           00437         BTFSC   STATUS,Z
+062B   01A4           00438         CLRF    MINU
+                      00439 
+062C   0825           00440         MOVF    MIND,W
+062D   3A06           00441         XORLW   6
+062E   1903           00442         BTFSC   STATUS,Z
+062F   01A5           00443         CLRF    MIND
+                      00444 
+0630   0827           00445         MOVF    HORAD,W
+0631   3A03           00446         XORLW   3
+0632   1903           00447         BTFSC   STATUS,Z
+0633   01A7           00448         CLRF    HORAD
+                      00449 
+0634   0827           00450         MOVF    HORAD,W
+0635   3A02           00451         XORLW   2
+0636   1D03           00452         BTFSS   STATUS,Z
+0637   2E3D           00453         GOTO    $+6
+                      00454         
+0638   0826           00455         MOVF    HORAU,W
+0639   3A04           00456         XORLW   4
+063A   1903           00457         BTFSC   STATUS,Z
+063B   01A6           00458         CLRF    HORAU
+063C   2E41           00459         GOTO    $+5
+                      00460 
+063D   0826           00461         MOVF    HORAU,W
+063E   3A0A           00462         XORLW   10
+063F   1903           00463         BTFSC   STATUS,Z
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0640   01A6           00464         CLRF    HORAU
+                      00465 
+                      00466 ;****************************************
+0641   0824           00467         MOVF    MINU,W
+0642   3AFF           00468         XORLW   11111111B;
+0643   1D03           00469         BTFSS   STATUS,Z
+0644   2E47           00470         GOTO    $+3
+0645   3009           00471         MOVLW   9
+0646   00A4           00472         MOVWF   MINU
+                      00473 
+0647   0825           00474         MOVF    MIND,W
+0648   3AFF           00475         XORLW   11111111B
+0649   1D03           00476         BTFSS   STATUS,Z
+064A   2E4D           00477         GOTO    $+3
+064B   3005           00478         MOVLW   5
+064C   00A5           00479         MOVWF   MIND
+                      00480 
+064D   0827           00481         MOVF    HORAD,W
+064E   3AFF           00482         XORLW   11111111B
+064F   1D03           00483         BTFSS   STATUS,Z
+0650   2E53           00484         GOTO    $+3
+0651   3002           00485         MOVLW   2
+0652   00A7           00486         MOVWF   HORAD
+                      00487 
+0653   0827           00488         MOVF    HORAD,W
+0654   3A02           00489         XORLW   2
+0655   1D03           00490         BTFSS   STATUS,Z
+0656   2E5E           00491         GOTO    $+8
+                      00492 
+0657   0826           00493         MOVF    HORAU,W
+0658   3AFF           00494         XORLW   11111111B
+0659   1D03           00495         BTFSS   STATUS,Z
+065A   2E5D           00496         GOTO    $+3
+065B   3003           00497         MOVLW   3
+065C   00A6           00498         MOVWF   HORAU
+065D   2E64           00499         GOTO    $+7
+                      00500 
+065E   0826           00501         MOVF    HORAU,W
+065F   3AFF           00502         XORLW   11111111B
+0660   1D03           00503         BTFSS   STATUS,Z
+0661   2E64           00504         GOTO    $+3
+0662   3009           00505         MOVLW   9
+0663   00A6           00506         MOVWF   HORAU
+                      00507 
+                      00508 ;****************BOTAO0******************
+0664   1806           00509         BTFSC   PORTB,0
+0665   2E7C           00510         GOTO    $+23
+0666   1C06           00511         BTFSS   PORTB,0
+0667   2E66           00512         GOTO    $-1
+                      00513 
+                      00514 ;****************************************
+                      00515 ;CASO A HORAD SEJA 2 E A HORAU ESTAJA MAIOR QUE 3
+0668   1D05           00516         BTFSS   PORTA,2;
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0669   2E72           00517         GOTO    $+9
+066A   0827           00518         MOVF    HORAD,W
+066B   3A02           00519         XORLW   2
+066C   1D03           00520         BTFSS   STATUS,Z
+066D   2E72           00521         GOTO    $+5
+066E   0826           00522         MOVF    HORAU,W
+066F   3C04           00523         SUBLW   4
+0670   1C03           00524         BTFSS   STATUS,C
+0671   01A6           00525         CLRF    HORAU
+                      00526 ;****************************************
+                      00527 
+0672   1003           00528         BCF     STATUS,C
+0673   0D85           00529         RLF     PORTA,F
+                      00530 
+0674   1F05           00531         BTFSS   PORTA,6
+0675   2E7C           00532         GOTO    $+7
+0676   1410           00533         BSF             T1CON,0
+0677   3000           00534         MOVLW   0
+0678   00AB           00535         MOVWF   DEZSEG
+0679   00A2           00536         MOVWF   SEGU
+067A   00A3           00537         MOVWF   SEGD
+                      00538         
+067B   0008           00539         RETURN  
+                      00540         
+067C   2E02           00541         GOTO    @1
+                      00542 ;****************************************
+                      00543 
+                      00544         END
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+@1                                00000602
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADCS2                             00000006
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+AJUSTE                            00000600
+ATRASO2                           0000007E
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000003
+CHS1                              00000004
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CHS2                              00000005
+CIS                               00000003
+CKE                               00000006
+CKP                               00000004
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000009C
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CROC                              0000002F
+CROD                              0000002E
+CRODEZ                            0000002C
+CROU                              0000002D
+CSRC                              00000007
+CVR0                              00000000
+CVR1                              00000001
+CVR2                              00000002
+CVR3                              00000003
+CVRCON                            0000009D
+CVREN                             00000007
+CVROE                             00000006
+CVRR                              00000005
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+DEZSEG                            0000002B
+DISPLAY                           00000200
+D_A                               00000005
+D_NOT_A                           00000005
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+F                                 00000001
+FERR                              00000002
+FLAGS                             0000002A
+FSR                               00000004
+GCEN                              00000007
+GIE                               00000007
+GO                                00000002
+GO_DONE                           00000002
+GO_NOT_DONE                       00000002
+HEX7SEG                           00000500
+HORAD                             00000027
+HORAU                             00000026
+I2C_DATA                          00000005
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+IBF                               00000007
+IBOV                              00000005
+INDF                              00000000
+INICIO                            00000030
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTER                             00000300
+INTF                              00000001
+IRP                               00000007
+LOOP                              00000054
+MIND                              00000025
+MINU                              00000024
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OBF                               00000006
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PR2                               00000092
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSPIE                             00000007
+PSPIF                             00000007
+PSPMODE                           00000004
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+RC5                               00000005
+RC6                               00000006
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+RE1                               00000001
+RE2                               00000002
+READ_WRITE                        00000002
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SEGD                              00000023
+SEGU                              00000022
+SEN                               00000000
+SMP                               00000007
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+STATUS                            00000003
+SYNC                              00000004
+S_TEMP                            00000029
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TEMP                              00000020
+TIMER                             00000400
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRMT                              00000001
+TX8_9                             00000006
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000028
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00001FFF
+_CP_OFF                           00003FFF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_DEVID1                           00002006
+_HS_OSC                           00003FFE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FFD
+__16F877A                         00000001
+MPASM  5.42                          REL8.ASM   3-30-2021  9:29:36         PAGE 19
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+
+0000 : X---X----------- ---------------- XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXX---- ---------------- ---------------- ----------------
+0200 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXX-
+0300 : XXXXXXXXXXXXXXXX XXX------------- ---------------- ----------------
+0400 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0440 : XXXXXXXXX------- ---------------- ---------------- ----------------
+0500 : XXXXXXXXXXXXXXXX XX-------------- ---------------- ----------------
+0600 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0640 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXX---
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   408
+Program Memory Words Free:  7784
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     5 reported,     0 suppressed
+
+
